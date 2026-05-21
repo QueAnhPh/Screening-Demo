@@ -1,0 +1,258 @@
+
+<h2 class="sr-only">Beacon Fund AI Deal Screening Assistant — generates a bullet-point investment screening memo from company details</h2>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--font-sans);}
+.wrap{padding:4px 0 24px;}
+.topbar{display:flex;align-items:center;gap:9px;padding-bottom:14px;border-bottom:0.5px solid var(--color-border-tertiary);margin-bottom:18px;}
+.dot{width:8px;height:8px;border-radius:50%;background:#1a6e4a;flex-shrink:0;}
+.topbar h1{font-size:15px;font-weight:500;color:var(--color-text-primary);}
+.pill{margin-left:auto;font-size:11px;color:var(--color-text-secondary);background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary);padding:3px 9px;border-radius:var(--border-radius-md);}
+.steps{display:flex;margin-bottom:18px;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);overflow:hidden;}
+.step{flex:1;text-align:center;font-size:11px;color:var(--color-text-tertiary);padding:8px 4px;background:var(--color-background-secondary);border-right:0.5px solid var(--color-border-tertiary);transition:all .2s;}
+.step:last-child{border-right:none;}
+.step.on{background:#e9f5f0;color:#1a6e4a;font-weight:500;}
+.card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:16px 20px;margin-bottom:12px;}
+.slabel{font-size:11px;font-weight:500;color:var(--color-text-tertiary);letter-spacing:.06em;text-transform:uppercase;margin-bottom:12px;}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;}
+.fg{display:flex;flex-direction:column;gap:5px;}
+.fg label{font-size:12px;color:var(--color-text-secondary);font-weight:500;}
+input,select,textarea{font-size:13px;width:100%;padding:7px 10px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);background:var(--color-background-primary);color:var(--color-text-primary);font-family:var(--font-sans);}
+textarea{resize:vertical;min-height:72px;}
+input:focus,select:focus,textarea:focus{outline:none;border-color:#1a6e4a;}
+.hint{font-size:11px;color:var(--color-text-tertiary);margin-top:3px;line-height:1.5;}
+.run{width:100%;padding:10px;font-size:14px;font-weight:500;cursor:pointer;background:#1a6e4a;color:#fff;border:none;border-radius:var(--border-radius-md);display:flex;align-items:center;justify-content:center;gap:8px;transition:opacity .15s;}
+.run:hover{opacity:.85;}
+.run:disabled{opacity:.4;cursor:not-allowed;}
+.spin{width:13px;height:13px;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:sp .7s linear infinite;}
+@keyframes sp{to{transform:rotate(360deg)}}
+.out{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);overflow:hidden;margin-top:12px;display:none;}
+.out-hd{padding:10px 18px;border-bottom:0.5px solid var(--color-border-tertiary);display:flex;align-items:center;justify-content:space-between;background:var(--color-background-secondary);}
+.out-hd span{font-size:12px;font-weight:500;color:var(--color-text-secondary);}
+.out-hd div{display:flex;gap:6px;}
+.abtn{font-size:11px;cursor:pointer;background:none;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);padding:3px 9px;color:var(--color-text-secondary);font-family:var(--font-sans);}
+.abtn:hover{background:var(--color-background-secondary);}
+.memo{padding:18px 22px;}
+.memo-hd{margin-bottom:16px;padding-bottom:12px;border-bottom:2px solid #1a6e4a;}
+.memo-hd .co{font-size:16px;font-weight:500;color:var(--color-text-primary);margin-bottom:8px;}
+.meta-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:6px;margin-bottom:10px;}
+.meta-item{font-size:12px;color:var(--color-text-secondary);}
+.meta-item strong{display:block;font-size:11px;color:var(--color-text-tertiary);font-weight:500;text-transform:uppercase;letter-spacing:.04em;margin-bottom:1px;}
+.rec{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:500;padding:4px 12px;border-radius:var(--border-radius-md);}
+.rec.pass{background:#e9f5f0;color:#1a6e4a;}
+.rec.monitor{background:#fef9e7;color:#7d6608;}
+.rec.decline{background:#fdf2f2;color:#922b21;}
+.sec{margin-bottom:16px;}
+.sec-title{font-size:11px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--color-text-tertiary);margin-bottom:8px;display:flex;align-items:center;gap:6px;}
+.sec-title::after{content:'';flex:1;height:0.5px;background:var(--color-border-tertiary);}
+ul.bullets{list-style:none;padding:0;}
+ul.bullets li{display:flex;align-items:flex-start;gap:8px;font-size:13px;line-height:1.65;color:var(--color-text-primary);padding:5px 0;border-bottom:0.5px solid var(--color-border-tertiary);}
+ul.bullets li:last-child{border-bottom:none;}
+ul.bullets li .bullet-dot{color:#1a6e4a;font-size:18px;line-height:1.3;flex-shrink:0;}
+ul.bullets li .kw{font-weight:500;color:var(--color-text-primary);}
+ul.bullets li .body{color:var(--color-text-secondary);}
+.errmsg{color:var(--color-text-danger,#c0392b);font-size:13px;padding:14px 20px;}
+</style>
+
+<div class="wrap">
+  <div class="topbar">
+    <div class="dot"></div>
+    <h1>Deal screening assistant</h1>
+    <div class="pill">Beacon Fund · Private debt</div>
+  </div>
+  <div class="steps">
+    <div class="step on" id="s1"><i class="ti ti-pencil" aria-hidden="true"></i> Input</div>
+    <div class="step" id="s2"><i class="ti ti-robot" aria-hidden="true"></i> Analysis</div>
+    <div class="step" id="s3"><i class="ti ti-file-text" aria-hidden="true"></i> Memo</div>
+    <div class="step" id="s4"><i class="ti ti-send" aria-hidden="true"></i> Pipeline</div>
+  </div>
+  <div class="card">
+    <div class="slabel">Company information</div>
+    <div class="frow">
+      <div class="fg"><label>Company name *</label><input type="text" id="co" placeholder="e.g. Nguyen Thi Lan Bakery Chain"></div>
+      <div class="fg"><label>Sector</label>
+        <select id="sec2">
+          <option value="">Select sector</option>
+          <option>Food & Beverage</option><option>Healthcare</option><option>Education</option>
+          <option>Retail / E-commerce</option><option>Manufacturing</option><option>Agriculture</option>
+          <option>Financial Services</option><option>Technology / SaaS</option><option>Logistics</option>
+          <option>Beauty & Personal Care</option><option>Other</option>
+        </select>
+      </div>
+    </div>
+    <div class="frow">
+      <div class="fg"><label>Est. annual revenue (USD)</label>
+        <select id="rev">
+          <option value="">Select range</option>
+          <option>Under $500K</option><option>$500K – $2M</option><option>$2M – $5M</option>
+          <option>$5M – $15M</option><option>$15M – $50M</option><option>Over $50M</option>
+        </select>
+      </div>
+      <div class="fg"><label>Leadership</label>
+        <select id="lead">
+          <option value="">Select</option>
+          <option>Woman-led (founder or CEO)</option><option>Diverse leadership team</option>
+          <option>Male-led</option><option>Unknown</option>
+        </select>
+      </div>
+    </div>
+    <div class="fg">
+      <label>Description & context *</label>
+      <textarea id="desc" placeholder="Business model, years in operation, geography, use of proceeds, any known financials..."></textarea>
+      <div class="hint">Include: business model · years operating · use of proceeds · revenue visibility</div>
+    </div>
+  </div>
+  <button class="run" id="runBtn" onclick="run()">
+    <i class="ti ti-player-play" aria-hidden="true"></i> Generate screening memo
+  </button>
+  <div class="out" id="outWrap">
+    <div class="out-hd">
+      <span><i class="ti ti-file-text" aria-hidden="true" style="font-size:13px;margin-right:4px;"></i>Screening memo — <span id="outCo"></span></span>
+      <div>
+        <button class="abtn" id="cpBtn" onclick="copyMemo()"><i class="ti ti-copy" aria-hidden="true"></i> Copy</button>
+        <button class="abtn" onclick="reset()"><i class="ti ti-refresh" aria-hidden="true"></i> New</button>
+      </div>
+    </div>
+    <div class="memo" id="memoBody"></div>
+  </div>
+</div>
+
+<script>
+function setStep(n){['s1','s2','s3','s4'].forEach((id,i)=>document.getElementById(id).classList.toggle('on',i<n));}
+
+function makeBullets(arr){
+  if(!arr||!arr.length) return '';
+  return '<ul class="bullets">'+arr.map(item=>{
+    const m = item.match(/^\*\*(.+?)\*\*[:–\-]?\s*(.*)/s);
+    if(m){
+      return `<li><span class="bullet-dot" aria-hidden="true">·</span><div><span class="kw">${m[1]}:</span> <span class="body">${m[2]}</span></div></li>`;
+    }
+    return `<li><span class="bullet-dot" aria-hidden="true">·</span><div>${item}</div></li>`;
+  }).join('')+'</ul>';
+}
+
+function proseToBullets(text){
+  if(!text) return '';
+  const sentences = text.match(/[^.!?]+[.!?]+(?:\s|$)/g)||[text];
+  return '<ul class="bullets">'+sentences.map(s=>s.trim()).filter(Boolean).map(s=>{
+    const m = s.match(/^([A-Z][^:]{2,35}):\s*(.*)/);
+    if(m) return `<li><span class="bullet-dot" aria-hidden="true">·</span><div><span class="kw">${m[1]}:</span> <span class="body">${m[2]}</span></div></li>`;
+    const words = s.split(' ');
+    const kw = words.slice(0,Math.min(3,Math.ceil(words.length/4))).join(' ');
+    const rest = words.slice(Math.min(3,Math.ceil(words.length/4))).join(' ');
+    return rest ? `<li><span class="bullet-dot" aria-hidden="true">·</span><div><span class="kw">${kw}</span> ${rest}</div></li>`
+                : `<li><span class="bullet-dot" aria-hidden="true">·</span><div>${s}</div></li>`;
+  }).join('')+'</ul>';
+}
+
+function renderMemo(json, company){
+  const b = document.getElementById('memoBody');
+  const today = new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+  const v = json.recommendation_verdict||'';
+  const rc = v.includes('PASS')?'pass':v.includes('MONITOR')?'monitor':'decline';
+  const icon = rc==='pass'?'circle-check':rc==='monitor'?'eye':'x';
+
+  let html = `<div class="memo-hd">
+    <div class="co">${company}</div>
+    <div class="meta-grid">
+      <div class="meta-item"><strong>Date</strong>${today}</div>
+      <div class="meta-item"><strong>Stage</strong>Initial screen</div>
+      ${json.sector?`<div class="meta-item"><strong>Sector</strong>${json.sector}</div>`:''}
+    </div>
+    <div class="rec ${rc}"><i class="ti ti-${icon}" aria-hidden="true"></i>${v}${json.recommendation_rationale?' — '+json.recommendation_rationale:''}</div>
+  </div>`;
+
+  const proseSecs = [
+    ['business_overview','Business overview','ti-building'],
+    ['missing_middle_fit','Missing middle fit','ti-target'],
+    ['gender_impact_lens','Gender & impact lens','ti-users'],
+    ['debt_suitability','Debt suitability','ti-coin'],
+  ];
+  proseSecs.forEach(([k,t,icon])=>{
+    if(!json[k]) return;
+    html += `<div class="sec"><div class="sec-title"><i class="ti ${icon}" aria-hidden="true"></i>${t}</div>${proseToBullets(json[k])}</div>`;
+  });
+
+  const listSecs = [
+    ['key_risks','Key risks','ti-alert-triangle'],
+    ['questions_for_next_meeting','Questions for next meeting','ti-message-question'],
+  ];
+  listSecs.forEach(([k,t,icon])=>{
+    if(!json[k]||!json[k].length) return;
+    html += `<div class="sec"><div class="sec-title"><i class="ti ${icon}" aria-hidden="true"></i>${t}</div>${makeBullets(json[k])}</div>`;
+  });
+
+  b.innerHTML = html;
+}
+
+async function run(){
+  const company = document.getElementById('co').value.trim();
+  const desc = document.getElementById('desc').value.trim();
+  if(!company||!desc){alert('Please enter a company name and description.');return;}
+  const btn = document.getElementById('runBtn');
+  btn.disabled=true; btn.innerHTML='<div class="spin"></div> Analysing...';
+  setStep(2);
+  document.getElementById('outWrap').style.display='none';
+  const sector=document.getElementById('sec2').value;
+  const rev=document.getElementById('rev').value;
+  const lead=document.getElementById('lead').value;
+
+  const prompt=`You are a junior investment analyst at Beacon Fund, Vietnam's first private debt fund targeting gender-lens SME lending in Southeast Asia. Beacon's thesis: the "missing middle" — too big for microfinance, too small for PE, wrong for VC, underserved by banks.
+
+Return ONLY valid JSON. No markdown, no preamble, no explanation outside the JSON. Each prose field must be structured as 2-4 short, punchy sentences. Begin each sentence with a bolded keyword phrase using **Keyword phrase**: format so the reader can skim quickly. Keep sentences concise and factual.
+
+COMPANY: ${company}
+SECTOR: ${sector||'Not specified'}
+REVENUE: ${rev||'Not specified'}
+LEADERSHIP: ${lead||'Not specified'}
+CONTEXT: ${desc}
+
+JSON structure (all values plain strings or arrays of strings):
+{
+  "sector": "short phrase",
+  "business_overview": "Sentences starting with **Keyword**: content. Each sentence covers one key fact: business model, revenue source, years operating, geography.",
+  "missing_middle_fit": "Sentences starting with **Keyword**: content. Cover: size fit, bank accessibility, PE/VC suitability.",
+  "gender_impact_lens": "Sentences starting with **Keyword**: content. Cover: leadership gender, social impact thesis, beneficiaries.",
+  "debt_suitability": "Sentences starting with **Keyword**: content. Cover: cash flow profile, suggested tenor, use of proceeds clarity.",
+  "key_risks": ["**Risk label**: one-sentence explanation","**Risk label**: explanation","**Risk label**: explanation"],
+  "questions_for_next_meeting": ["**Topic**: specific question for management","**Topic**: question","**Topic**: question","**Topic**: question"],
+  "recommendation_verdict": "PASS TO NEXT STAGE or MONITOR or DECLINE",
+  "recommendation_rationale": "one concise sentence"
+}`;
+
+  try{
+    const res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1200,messages:[{role:"user",content:prompt}]})});
+    const data=await res.json();
+    const raw=data.content?.map(b=>b.text||'').join('')||'';
+    const clean=raw.replace(/```json|```/g,'').trim();
+    const json=JSON.parse(clean);
+    document.getElementById('outCo').textContent=company;
+    document.getElementById('outWrap').style.display='block';
+    renderMemo(json,company);
+    setStep(4);
+    btn.disabled=false; btn.innerHTML='<i class="ti ti-player-play" aria-hidden="true"></i> Generate new memo';
+  }catch(e){
+    setStep(1);
+    document.getElementById('outWrap').style.display='block';
+    document.getElementById('memoBody').innerHTML=`<div class="errmsg"><i class="ti ti-alert-circle" aria-hidden="true"></i> Error: ${e.message}. Please try again.</div>`;
+    btn.disabled=false; btn.innerHTML='<i class="ti ti-player-play" aria-hidden="true"></i> Generate screening memo';
+  }
+}
+
+function copyMemo(){
+  navigator.clipboard.writeText(document.getElementById('memoBody').innerText).then(()=>{
+    const b=document.getElementById('cpBtn'); b.innerHTML='<i class="ti ti-check" aria-hidden="true"></i> Copied';
+    setTimeout(()=>{b.innerHTML='<i class="ti ti-copy" aria-hidden="true"></i> Copy';},1800);
+  });
+}
+
+function reset(){
+  document.getElementById('co').value='';
+  document.getElementById('desc').value='';
+  ['sec2','rev','lead'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('outWrap').style.display='none';
+  document.getElementById('runBtn').innerHTML='<i class="ti ti-player-play" aria-hidden="true"></i> Generate screening memo';
+  document.getElementById('runBtn').disabled=false;
+  setStep(1);
+}
+</script>
